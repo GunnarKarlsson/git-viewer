@@ -34,6 +34,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var pullingId by remember { mutableStateOf<Long?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var repoToDelete by remember { mutableStateOf<RepoEntity?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Git Viewer") }) },
@@ -67,9 +68,7 @@ fun HomeScreen(
                                 pullingId = null
                             }
                         },
-                        onDelete = {
-                            scope.launch { repository.deleteRepo(repo) }
-                        }
+                        onDelete = { repoToDelete = repo }
                     )
                 }
             }
@@ -82,6 +81,25 @@ fun HomeScreen(
                 text = { Text(it) },
                 confirmButton = {
                     TextButton(onClick = { error = null }) { Text("OK") }
+                }
+            )
+        }
+
+        repoToDelete?.let { repo ->
+            AlertDialog(
+                onDismissRequest = { repoToDelete = null },
+                title = { Text("Delete repository?") },
+                text = { Text("Delete ${repo.name}? The local clone will be removed.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            repoToDelete = null
+                            scope.launch { repository.deleteRepo(repo) }
+                        }
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { repoToDelete = null }) { Text("Cancel") }
                 }
             )
         }
