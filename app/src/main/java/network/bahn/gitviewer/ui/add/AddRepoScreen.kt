@@ -15,6 +15,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +37,16 @@ fun AddRepoScreen(
             TopAppBar(
                 title = { Text(if (publicKey != null) "SSH public key" else "Add Repository") },
                 navigationIcon = {
-                    TextButton(onClick = onDone) {
+                    TextButton(
+                        onClick = onDone,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
                         Text(if (publicKey != null) "Done" else "Cancel")
                     }
-                }
+                },
+                colors = gitViewerTopAppBarColors()
             )
         }
     ) { padding ->

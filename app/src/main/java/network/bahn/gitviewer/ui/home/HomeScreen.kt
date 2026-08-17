@@ -24,6 +24,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import network.bahn.gitviewer.data.RepoEntity
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,7 +45,12 @@ fun HomeScreen(
     var sshPublicKey by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Git Viewer") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Git Viewer") },
+                colors = gitViewerTopAppBarColors()
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) {
                 Icon(Icons.Default.Add, contentDescription = "Add repo")

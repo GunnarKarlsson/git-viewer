@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +55,10 @@ fun FileViewerScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = TopAppBarDefaults.topAppBarColors().containerColor) {
+            Surface(
+                color = gitViewerTopAppBarColors().containerColor,
+                contentColor = gitViewerTopAppBarColors().titleContentColor
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
