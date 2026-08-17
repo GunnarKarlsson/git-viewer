@@ -7,8 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="poster_blue">#072A4A</color>
+    <color name="poster_blue">#1B7BA3</color>
     <color name="poster_teal">#0E8A86</color>
     <color name="poster_orange">#FF7A18</color>
-    <color name="ic_launcher_background">#072A4A</color>
+    <color name="ic_launcher_background">#1B7BA3</color>
 </resources>

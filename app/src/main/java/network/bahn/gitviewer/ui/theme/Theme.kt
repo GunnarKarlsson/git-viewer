@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val PosterBlue = Color(0xFF072A4A)
+val PosterBlue = Color(0xFF1B7BA3)
 val PosterTeal = Color(0xFF0E8A86)
 val PosterOrange = Color(0xFFFF7A18)
 
