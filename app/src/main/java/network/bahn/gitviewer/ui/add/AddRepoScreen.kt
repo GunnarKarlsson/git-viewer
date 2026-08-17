@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,13 +16,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.ui.theme.AppLogo
 import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRepoScreen(
     repository: RepoRepository,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    onHome: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
@@ -37,13 +40,11 @@ fun AddRepoScreen(
             TopAppBar(
                 title = { Text(if (publicKey != null) "SSH public key" else "Add Repository") },
                 navigationIcon = {
-                    TextButton(
-                        onClick = onDone,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Text(if (publicKey != null) "Done" else "Cancel")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AppLogo(onClick = onHome)
+                        IconButton(onClick = onDone) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        }
                     }
                 },
                 colors = gitViewerTopAppBarColors()

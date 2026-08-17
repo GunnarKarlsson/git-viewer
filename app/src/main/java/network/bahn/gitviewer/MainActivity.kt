@@ -49,7 +49,8 @@ fun AppNav(repo: RepoRepository) {
         composable("add") {
             AddRepoScreen(
                 repository = repo,
-                onDone = { nav.popBackStack() }
+                onDone = { nav.popBackStack() },
+                onHome = { nav.popBackStack("home", inclusive = false) }
             )
         }
         composable(
@@ -74,7 +75,8 @@ fun AppNav(repo: RepoRepository) {
                 onDirClick = { dirPath ->
                     nav.navigate("browser/$id?dir=${Uri.encode(dirPath, "/")}")
                 },
-                onBack = { nav.popBackStack() }
+                onBack = { nav.popBackStack() },
+                onHome = { nav.popBackStack("home", inclusive = false) }
             )
         }
         composable(
@@ -90,7 +92,8 @@ fun AppNav(repo: RepoRepository) {
                 relativePath = path,
                 repoId = repoId,
                 repository = repo,
-                onBack = { nav.popBackStack() }
+                onBack = { nav.popBackStack() },
+                onHome = { nav.popBackStack("home", inclusive = false) }
             )
         }
     }

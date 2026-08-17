@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import network.bahn.gitviewer.data.RepoRepository
 import network.bahn.gitviewer.data.RepoWorkspace
+import network.bahn.gitviewer.ui.theme.AppLogo
 import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,7 +22,8 @@ fun FileViewerScreen(
     relativePath: String,
     repoId: Long,
     repository: RepoRepository,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHome: () -> Unit
 ) {
     val isMarkdown = relativePath.substringAfterLast('.').equals("md", ignoreCase = true) ||
             relativePath.substringAfterLast('.').equals("markdown", ignoreCase = true)
@@ -57,6 +59,7 @@ fun FileViewerScreen(
                         .padding(end = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    AppLogo(onClick = onHome)
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }

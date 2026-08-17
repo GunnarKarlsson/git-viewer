@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import network.bahn.gitviewer.data.RepoFsEntry
 import network.bahn.gitviewer.data.RepoRepository
 import network.bahn.gitviewer.data.RepoWorkspace
+import network.bahn.gitviewer.ui.theme.AppLogo
 import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +27,8 @@ fun FileBrowserScreen(
     repository: RepoRepository,
     onFileClick: (String) -> Unit,
     onDirClick: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHome: () -> Unit
 ) {
     var repoName by remember { mutableStateOf("…") }
     var cloned by remember { mutableStateOf(true) }
@@ -57,6 +59,7 @@ fun FileBrowserScreen(
                         .padding(end = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    AppLogo(onClick = onHome)
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
