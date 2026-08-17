@@ -60,18 +60,27 @@ fun AppNav(repo: RepoRepository) {
                 repoId = id,
                 repository = repo,
                 onFileClick = { path ->
-                    nav.navigate("viewer/${path.replace("/", "%2F")}")
+                    nav.navigate("viewer/$id/${path.replace("/", "%2F")}")
                 },
                 onBack = { nav.popBackStack() }
             )
         }
         composable(
-            "viewer/{path}",
-            arguments = listOf(navArgument("path") { type = NavType.StringType })
+            "viewer/{repoId}/{path}",
+            arguments = listOf(
+                navArgument("repoId") { type = NavType.LongType },
+                navArgument("path") { type = NavType.StringType }
+            )
         ) { backStack ->
+            val repoId = backStack.arguments!!.getLong("repoId")
             val encoded = backStack.arguments!!.getString("path")!!
             val path = encoded.replace("%2F", "/")
-            FileViewerScreen(path = path, onBack = { nav.popBackStack() })
+            FileViewerScreen(
+                path = path,
+                repoId = repoId,
+                repository = repo,
+                onBack = { nav.popBackStack() }
+            )
         }
     }
 }
