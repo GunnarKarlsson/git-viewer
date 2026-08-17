@@ -25,7 +25,7 @@ fun AddRepoScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
-    var useSshKey by remember { mutableStateOf(true) }
+    var useSshKey by remember { mutableStateOf(false) }
     var publicKey by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

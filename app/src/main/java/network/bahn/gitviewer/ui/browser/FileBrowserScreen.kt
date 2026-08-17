@@ -1,9 +1,5 @@
 package network.bahn.gitviewer.ui.browser
 
-// ============================================================
-//  ui/browser/FileBrowserScreen.kt
-// ============================================================
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,9 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import network.bahn.gitviewer.data.RepoFsEntry
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.data.RepoWorkspace
 import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,34 +28,19 @@ fun FileBrowserScreen(
     onDirClick: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    var repoRoot by remember { mutableStateOf<File?>(null) }
     var repoName by remember { mutableStateOf("…") }
-    var entries by remember { mutableStateOf<List<File>>(emptyList()) }
+    var cloned by remember { mutableStateOf(true) }
+    var entries by remember { mutableStateOf<List<RepoFsEntry>>(emptyList()) }
 
-    val currentDir = remember(repoRoot, relativePath) {
-        repoRoot?.let { resolveInRepo(it, relativePath) }
-    }
-
-    LaunchedEffect(repoId) {
+    LaunchedEffect(repoId, relativePath) {
         val repo = repository.getRepo(repoId) ?: return@LaunchedEffect
-        val root = File(repo.localPath)
-        if (!root.exists()) {
-            repoName = "Not cloned yet – pull first"
-            return@LaunchedEffect
-        }
-        repoRoot = root
         repoName = repo.name
+        cloned = repository.isCloned(repo)
+        entries = if (cloned) repository.listEntries(repo, relativePath) else emptyList()
     }
 
-    LaunchedEffect(currentDir) {
-        val dir = currentDir ?: return@LaunchedEffect
-        entries = dir.listFiles()
-            ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
-            ?: emptyList()
-    }
-
-    val breadcrumb = remember(currentDir, repoRoot, repoName) {
-        breadcrumbFromRoot(currentDir, repoRoot, repoName)
+    val breadcrumb = remember(repoName, relativePath) {
+        RepoWorkspace.breadcrumb(repoName, relativePath)
     }
 
     Scaffold(
@@ -87,7 +69,7 @@ fun FileBrowserScreen(
             }
         }
     ) { padding ->
-        if (currentDir == null) {
+        if (!cloned) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text("Repository not pulled yet")
             }
@@ -96,22 +78,19 @@ fun FileBrowserScreen(
                 Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(8.dp)
             ) {
-                items(entries, key = { it.absolutePath }) { file ->
+                items(entries, key = { it.relativePath }) { entry ->
                     ListItem(
-                        headlineContent = { Text(file.name) },
+                        headlineContent = { Text(entry.name) },
                         leadingContent = {
                             Icon(
-                                if (file.isDirectory) Icons.Default.Folder
+                                if (entry.isDirectory) Icons.Default.Folder
                                 else Icons.Default.InsertDriveFile,
                                 contentDescription = null
                             )
                         },
                         modifier = Modifier.clickable {
-                            if (file.isDirectory) {
-                                onDirClick(file.toRelativeString(repoRoot!!))
-                            } else {
-                                onFileClick(file.absolutePath)
-                            }
+                            if (entry.isDirectory) onDirClick(entry.relativePath)
+                            else onFileClick(entry.relativePath)
                         }
                     )
                     HorizontalDivider()
@@ -119,19 +98,4 @@ fun FileBrowserScreen(
             }
         }
     }
-}
-
-private fun resolveInRepo(root: File, relativePath: String): File {
-    if (relativePath.isEmpty() || relativePath == ".") return root
-    val resolved = File(root, relativePath).canonicalFile
-    val rootCanonical = root.canonicalFile
-    return if (resolved.path.startsWith(rootCanonical.path)) resolved else root
-}
-
-private fun breadcrumbFromRoot(currentDir: File?, repoRoot: File?, repoName: String): String {
-    if (currentDir == null || repoRoot == null) return repoName
-    val relative = currentDir.toRelativeString(repoRoot)
-    if (relative.isEmpty() || relative == ".") return repoName
-    val segments = relative.split(File.separatorChar).filter { it.isNotEmpty() }
-    return (listOf(repoName) + segments).joinToString(" / ")
 }

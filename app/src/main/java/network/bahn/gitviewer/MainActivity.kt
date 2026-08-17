@@ -4,6 +4,7 @@ package network.bahn.gitviewer
 //  MainActivity.kt
 // ============================================================
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -52,28 +53,26 @@ fun AppNav(repo: RepoRepository) {
             )
         }
         composable(
-            "browser/{repoId}?path={path}",
+            "browser/{repoId}?dir={dir}",
             arguments = listOf(
                 navArgument("repoId") { type = NavType.LongType },
-                navArgument("path") {
+                navArgument("dir") {
                     type = NavType.StringType
                     defaultValue = ""
                 }
             )
         ) { backStack ->
             val id = backStack.arguments!!.getLong("repoId")
-            val relativePath = backStack.arguments!!.getString("path")
-                .orEmpty()
-                .replace("%2F", "/")
+            val relativePath = Uri.decode(backStack.arguments!!.getString("dir").orEmpty())
             FileBrowserScreen(
                 repoId = id,
                 relativePath = relativePath,
                 repository = repo,
                 onFileClick = { path ->
-                    nav.navigate("viewer/$id/${path.replace("/", "%2F")}")
+                    nav.navigate("viewer/$id/${path.replace("/", "|")}")
                 },
                 onDirClick = { dirPath ->
-                    nav.navigate("browser/$id?path=${dirPath.replace("/", "%2F")}")
+                    nav.navigate("browser/$id?dir=${Uri.encode(dirPath, "/")}")
                 },
                 onBack = { nav.popBackStack() }
             )
@@ -86,10 +85,9 @@ fun AppNav(repo: RepoRepository) {
             )
         ) { backStack ->
             val repoId = backStack.arguments!!.getLong("repoId")
-            val encoded = backStack.arguments!!.getString("path")!!
-            val path = encoded.replace("%2F", "/")
+            val path = backStack.arguments!!.getString("path")!!.replace("|", "/")
             FileViewerScreen(
-                path = path,
+                relativePath = path,
                 repoId = repoId,
                 repository = repo,
                 onBack = { nav.popBackStack() }

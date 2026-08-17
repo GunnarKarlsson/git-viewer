@@ -10,7 +10,8 @@ class RepoRepository(private val context: Context) {
 
     private val dao = AppDatabase.get(context).repoDao()
     private val keys = SshKeyStore(context)
-    private val rootDir = File(context.filesDir, "repos").also { it.mkdirs() }
+    private val workspace = RepoWorkspace(context.filesDir)
+    private val legacyReposDir = File(context.filesDir, "repos")
 
     fun getAllRepos(): Flow<List<RepoEntity>> = dao.getAll()
 
@@ -22,11 +23,27 @@ class RepoRepository(private val context: Context) {
         keys.publicKey(repoId)
     }
 
+    suspend fun isCloned(repo: RepoEntity): Boolean = withContext(Dispatchers.IO) {
+        workspace.migrateIfNeeded(repo, listOf(legacyReposDir))
+        File(workspace.dirFor(repo), ".git").exists()
+    }
+
+    suspend fun listEntries(repo: RepoEntity, relativePath: String): List<RepoFsEntry> =
+        withContext(Dispatchers.IO) {
+            workspace.migrateIfNeeded(repo, listOf(legacyReposDir))
+            workspace.list(repo, relativePath)
+        }
+
+    suspend fun readFile(repo: RepoEntity, relativePath: String): String =
+        withContext(Dispatchers.IO) {
+            workspace.migrateIfNeeded(repo, listOf(legacyReposDir))
+            workspace.readText(repo, relativePath)
+        }
+
     /** Add a new repo (does NOT clone yet). */
     suspend fun addRepo(name: String, url: String, generateSshKey: Boolean = false): Long {
-        val safeName = name.replace(Regex("[^a-zA-Z0-9_-]"), "_")
-        val local = File(rootDir, safeName).absolutePath
-        val id = dao.insert(RepoEntity(name = name, url = url, localPath = local))
+        val id = dao.insert(RepoEntity(name = name, url = url, localPath = ""))
+        dao.update(RepoEntity(id = id, name = name, url = url, localPath = id.toString()))
         if (generateSshKey) {
             withContext(Dispatchers.IO) {
                 keys.generate(id)
@@ -39,10 +56,11 @@ class RepoRepository(private val context: Context) {
     suspend fun pullRepo(repo: RepoEntity): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             SshEnvironment.install(context.filesDir)
-            val dir = File(repo.localPath)
+            workspace.migrateIfNeeded(repo, listOf(legacyReposDir))
+            val dir = workspace.dirFor(repo)
             val identity = keys.privateKeyFile(repo.id).takeIf { it.exists() }
             GitHelper.cloneOrPull(repo.url, dir, identity)
-            dao.update(repo.copy(lastPulled = System.currentTimeMillis()))
+            dao.update(repo.copy(lastPulled = System.currentTimeMillis(), localPath = repo.id.toString()))
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -51,7 +69,8 @@ class RepoRepository(private val context: Context) {
 
     suspend fun deleteRepo(repo: RepoEntity) {
         withContext(Dispatchers.IO) {
-            File(repo.localPath).deleteRecursively()
+            workspace.migrateIfNeeded(repo, listOf(legacyReposDir))
+            workspace.delete(repo)
             keys.delete(repo.id)
         }
         dao.delete(repo)

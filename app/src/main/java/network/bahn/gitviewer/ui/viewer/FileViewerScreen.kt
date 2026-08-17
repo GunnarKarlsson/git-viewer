@@ -1,9 +1,5 @@
 package network.bahn.gitviewer.ui.viewer
 
-// ============================================================
-//  ui/viewer/FileViewerScreen.kt
-// ============================================================
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,41 +12,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import network.bahn.gitviewer.data.RepoRepository
+import network.bahn.gitviewer.data.RepoWorkspace
 import network.bahn.gitviewer.ui.theme.gitViewerTopAppBarColors
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileViewerScreen(
-    path: String,
+    relativePath: String,
     repoId: Long,
     repository: RepoRepository,
     onBack: () -> Unit
 ) {
-    val file = remember(path) { File(path) }
-    val isMarkdown = file.extension.equals("md", ignoreCase = true) ||
-            file.extension.equals("markdown", ignoreCase = true)
+    val isMarkdown = relativePath.substringAfterLast('.').equals("md", ignoreCase = true) ||
+            relativePath.substringAfterLast('.').equals("markdown", ignoreCase = true)
 
     var content by remember { mutableStateOf("Loading…") }
     var repoName by remember { mutableStateOf("") }
-    var repoRoot by remember { mutableStateOf<File?>(null) }
 
-    LaunchedEffect(path) {
+    LaunchedEffect(repoId, relativePath) {
+        val repo = repository.getRepo(repoId) ?: return@LaunchedEffect
+        repoName = repo.name
         content = try {
-            file.readText()
+            repository.readFile(repo, relativePath)
         } catch (e: Exception) {
             "Error reading file:\n${e.message}"
         }
     }
 
-    LaunchedEffect(repoId) {
-        val repo = repository.getRepo(repoId) ?: return@LaunchedEffect
-        repoName = repo.name
-        repoRoot = File(repo.localPath)
-    }
-
-    val breadcrumb = remember(file, repoRoot, repoName) {
-        breadcrumbFromRoot(file, repoRoot, repoName.ifEmpty { file.name })
+    val breadcrumb = remember(repoName, relativePath) {
+        RepoWorkspace.breadcrumb(repoName.ifEmpty { "…" }, relativePath)
     }
 
     Scaffold(
@@ -100,12 +90,4 @@ fun FileViewerScreen(
             )
         }
     }
-}
-
-private fun breadcrumbFromRoot(file: File, repoRoot: File?, repoName: String): String {
-    if (repoRoot == null) return repoName
-    val relative = file.toRelativeString(repoRoot)
-    if (relative.isEmpty() || relative == ".") return repoName
-    val segments = relative.split(File.separatorChar).filter { it.isNotEmpty() }
-    return (listOf(repoName) + segments).joinToString(" / ")
 }

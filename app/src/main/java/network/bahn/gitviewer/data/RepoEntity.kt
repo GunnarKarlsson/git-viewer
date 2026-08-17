@@ -12,6 +12,6 @@ data class RepoEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val url: String,
-    val localPath: String,          // absolute path inside filesDir
+    val localPath: String,          // relative workspace key: repo id
     val lastPulled: Long = 0L       // epoch millis
 )
