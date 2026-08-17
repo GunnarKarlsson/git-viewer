@@ -24,14 +24,19 @@ import java.io.File
 @Composable
 fun FileBrowserScreen(
     repoId: Long,
+    relativePath: String,
     repository: RepoRepository,
     onFileClick: (String) -> Unit,
+    onDirClick: (String) -> Unit,
     onBack: () -> Unit
 ) {
     var repoRoot by remember { mutableStateOf<File?>(null) }
     var repoName by remember { mutableStateOf("…") }
-    var currentDir by remember { mutableStateOf<File?>(null) }
     var entries by remember { mutableStateOf<List<File>>(emptyList()) }
+
+    val currentDir = remember(repoRoot, relativePath) {
+        repoRoot?.let { resolveInRepo(it, relativePath) }
+    }
 
     LaunchedEffect(repoId) {
         val repo = repository.getRepo(repoId) ?: return@LaunchedEffect
@@ -42,7 +47,6 @@ fun FileBrowserScreen(
         }
         repoRoot = root
         repoName = repo.name
-        currentDir = root
     }
 
     LaunchedEffect(currentDir) {
@@ -56,16 +60,6 @@ fun FileBrowserScreen(
         breadcrumbFromRoot(currentDir, repoRoot, repoName)
     }
 
-    fun navigateUp() {
-        val dir = currentDir
-        val root = repoRoot
-        if (dir == null || root == null || dir.canonicalPath == root.canonicalPath) {
-            onBack()
-        } else {
-            currentDir = dir.parentFile
-        }
-    }
-
     Scaffold(
         topBar = {
             Surface(color = TopAppBarDefaults.topAppBarColors().containerColor) {
@@ -77,7 +71,7 @@ fun FileBrowserScreen(
                         .padding(end = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { navigateUp() }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                     Text(
@@ -110,7 +104,7 @@ fun FileBrowserScreen(
                         },
                         modifier = Modifier.clickable {
                             if (file.isDirectory) {
-                                currentDir = file
+                                onDirClick(file.toRelativeString(repoRoot!!))
                             } else {
                                 onFileClick(file.absolutePath)
                             }
@@ -121,6 +115,13 @@ fun FileBrowserScreen(
             }
         }
     }
+}
+
+private fun resolveInRepo(root: File, relativePath: String): File {
+    if (relativePath.isEmpty() || relativePath == ".") return root
+    val resolved = File(root, relativePath).canonicalFile
+    val rootCanonical = root.canonicalFile
+    return if (resolved.path.startsWith(rootCanonical.path)) resolved else root
 }
 
 private fun breadcrumbFromRoot(currentDir: File?, repoRoot: File?, repoName: String): String {

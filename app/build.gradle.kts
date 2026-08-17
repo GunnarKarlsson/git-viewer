@@ -24,6 +24,20 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    packaging {
+        resources {
+            pickFirsts += "OSGI-INF/l10n/plugin.properties"
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/INDEX.LIST"
+            )
+        }
+    }
 }
 
 kotlin {
@@ -56,6 +70,8 @@ dependencies {
 
     // JGit + Markdown + Coroutines
     implementation(libs.jgit)
+    implementation(libs.jgit.ssh.apache)
+    implementation(libs.bouncycastle.bcprov)
     implementation(libs.compose.markdown.v072)
     implementation(libs.kotlinx.coroutines.android)
 

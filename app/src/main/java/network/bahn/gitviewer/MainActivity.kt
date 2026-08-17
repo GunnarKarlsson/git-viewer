@@ -52,15 +52,28 @@ fun AppNav(repo: RepoRepository) {
             )
         }
         composable(
-            "browser/{repoId}",
-            arguments = listOf(navArgument("repoId") { type = NavType.LongType })
+            "browser/{repoId}?path={path}",
+            arguments = listOf(
+                navArgument("repoId") { type = NavType.LongType },
+                navArgument("path") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
         ) { backStack ->
             val id = backStack.arguments!!.getLong("repoId")
+            val relativePath = backStack.arguments!!.getString("path")
+                .orEmpty()
+                .replace("%2F", "/")
             FileBrowserScreen(
                 repoId = id,
+                relativePath = relativePath,
                 repository = repo,
                 onFileClick = { path ->
                     nav.navigate("viewer/$id/${path.replace("/", "%2F")}")
+                },
+                onDirClick = { dirPath ->
+                    nav.navigate("browser/$id?path=${dirPath.replace("/", "%2F")}")
                 },
                 onBack = { nav.popBackStack() }
             )
