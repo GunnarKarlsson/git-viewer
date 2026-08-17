@@ -1,4 +1,4 @@
-package network.bahn.gitreader
+package network.bahn.gitviewer
 
 import org.junit.Test
 
