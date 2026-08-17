@@ -28,56 +28,65 @@ fun FileBrowserScreen(
     onFileClick: (String) -> Unit,
     onBack: () -> Unit
 ) {
+    var repoRoot by remember { mutableStateOf<File?>(null) }
+    var repoName by remember { mutableStateOf("…") }
     var currentDir by remember { mutableStateOf<File?>(null) }
     var entries by remember { mutableStateOf<List<File>>(emptyList()) }
-    var title by remember { mutableStateOf("…") }
 
-    // Load root when repo is ready
     LaunchedEffect(repoId) {
         val repo = repository.getRepo(repoId) ?: return@LaunchedEffect
         val root = File(repo.localPath)
         if (!root.exists()) {
-            title = "Not cloned yet – pull first"
+            repoName = "Not cloned yet – pull first"
             return@LaunchedEffect
         }
+        repoRoot = root
+        repoName = repo.name
         currentDir = root
-        title = repo.name
     }
 
-    // Refresh listing whenever currentDir changes
     LaunchedEffect(currentDir) {
         val dir = currentDir ?: return@LaunchedEffect
         entries = dir.listFiles()
             ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
             ?: emptyList()
-        title = dir.name.ifEmpty { "root" }
+    }
+
+    val breadcrumb = remember(currentDir, repoRoot, repoName) {
+        breadcrumbFromRoot(currentDir, repoRoot, repoName)
+    }
+
+    fun navigateUp() {
+        val dir = currentDir
+        val root = repoRoot
+        if (dir == null || root == null || dir.canonicalPath == root.canonicalPath) {
+            onBack()
+        } else {
+            currentDir = dir.parentFile
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        val parent = currentDir?.parentFile
-                        val root = currentDir // we keep the original root in memory via repo
-                        // simple: go up if not at repo root
-                        if (parent != null && parent.absolutePath.startsWith(
-                                // crude but works for our layout
-                                currentDir!!.absolutePath.substringBeforeLast("/")
-                            )
-                        ) {
-                            // better: keep a stack, but for minimalism we just go to parent
-                            // (real apps should keep a path stack)
-                            currentDir = parent
-                        } else {
-                            onBack()
-                        }
-                    }) {
+            Surface(color = TopAppBarDefaults.topAppBarColors().containerColor) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+                        .heightIn(min = 64.dp)
+                        .padding(end = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
+                    Text(
+                        text = breadcrumb,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
                 }
-            )
+            }
         }
     ) { padding ->
         if (currentDir == null) {
@@ -112,4 +121,12 @@ fun FileBrowserScreen(
             }
         }
     }
+}
+
+private fun breadcrumbFromRoot(currentDir: File?, repoRoot: File?, repoName: String): String {
+    if (currentDir == null || repoRoot == null) return repoName
+    val relative = currentDir.toRelativeString(repoRoot)
+    if (relative.isEmpty() || relative == ".") return repoName
+    val segments = relative.split(File.separatorChar).filter { it.isNotEmpty() }
+    return (listOf(repoName) + segments).joinToString(" / ")
 }
